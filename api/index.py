@@ -11,9 +11,10 @@ body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; 
 h1 { font-size: 1.4em; }
 p { color: #555; line-height: 1.5; }
 code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
-a { color: #2563eb; }
+a { color: #2563eb; text-decoration: none; }
 .feeds { margin: 20px 0; }
-.feeds code { display: block; margin: 6px 0; }
+.btn { display: block; margin: 6px 0; padding: 8px 12px; background: #f4f4f4; border-radius: 4px; color: #1a1a1a; }
+.btn:hover { background: #e8e8e8; }
 </style>
 </head>
 <body>
@@ -22,10 +23,10 @@ a { color: #2563eb; }
 
 <div class="feeds">
 <strong>Subscribe:</strong>
-<code>https://acd-ics.vercel.app/feed.ics</code>
-<code>https://acd-ics.vercel.app/feed.ics?series=acde</code>
-<code>https://acd-ics.vercel.app/feed.ics?series=acdc</code>
-<code>https://acd-ics.vercel.app/feed.ics?series=acdt</code>
+<a class="btn" href="webcal://acd-ics.vercel.app/feed.ics">All calls</a>
+<a class="btn" href="webcal://acd-ics.vercel.app/feed.ics?series=acde">Execution (ACDE)</a>
+<a class="btn" href="webcal://acd-ics.vercel.app/feed.ics?series=acdc">Consensus (ACDC)</a>
+<a class="btn" href="webcal://acd-ics.vercel.app/feed.ics?series=acdt">Testing (ACDT)</a>
 </div>
 
 <p style="font-size:0.85em;color:#999;">Data from <a href="https://github.com/ethereum/pm">ethereum/pm</a>. Refreshes hourly.</p>
