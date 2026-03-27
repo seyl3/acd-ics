@@ -13,7 +13,7 @@ p { color: #555; line-height: 1.5; }
 code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
 a { color: #2563eb; text-decoration: none; }
 .feeds { margin: 20px 0; }
-.btn { display: block; margin: 6px 0; padding: 8px 12px; background: #f4f4f4; border-radius: 4px; color: #1a1a1a; }
+.btn { display: block; margin: 6px 0; padding: 8px 12px; background: #f4f4f4; border-radius: 4px; color: #1a1a1a; cursor: pointer; }
 .btn:hover { background: #e8e8e8; }
 </style>
 </head>
@@ -22,14 +22,23 @@ a { color: #2563eb; text-decoration: none; }
 <p>Live ICS feed for Ethereum's All Core Dev calls. Subscribe in any calendar app.</p>
 
 <div class="feeds">
-<strong>Subscribe:</strong>
-<a class="btn" href="webcal://acd-ics.vercel.app/feed.ics">All calls</a>
-<a class="btn" href="webcal://acd-ics.vercel.app/feed.ics?series=acde">Execution (ACDE)</a>
-<a class="btn" href="webcal://acd-ics.vercel.app/feed.ics?series=acdc">Consensus (ACDC)</a>
-<a class="btn" href="webcal://acd-ics.vercel.app/feed.ics?series=acdt">Testing (ACDT)</a>
+<strong>One click subscribe:</strong>
+<a class="btn" onclick="sub('/feed.ics')">All calls</a>
+<a class="btn" onclick="sub('/feed.ics?series=acde')">Execution (ACDE)</a>
+<a class="btn" onclick="sub('/feed.ics?series=acdc')">Consensus (ACDC)</a>
+<a class="btn" onclick="sub('/feed.ics?series=acdt')">Testing (ACDT)</a>
 </div>
 
+<p style="color:#555;font-size:0.9em;">Or copy this URL into your calendar app manually:</p>
+<code style="display:block;padding:8px;word-break:break-all;user-select:all;">https://acd-ics.vercel.app/feed.ics</code>
+
 <p style="font-size:0.85em;color:#999;">Data from <a href="https://github.com/ethereum/pm">ethereum/pm</a>. Refreshes hourly.</p>
+<script>
+function sub(path) {
+    window.location = 'webcal://acd-ics.vercel.app' + path;
+    setTimeout(function() { window.location = 'https://acd-ics.vercel.app' + path; }, 2000);
+}
+</script>
 </body>
 </html>"""
 
