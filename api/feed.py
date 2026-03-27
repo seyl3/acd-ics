@@ -152,6 +152,11 @@ def build_ics(issues):
             out.append(fold(f"LOCATION:{esc(zoom)}"))
         if url:
             out.append(fold(f"URL:{url}"))
+        out.append("BEGIN:VALARM")
+        out.append("TRIGGER:-PT2H")
+        out.append("ACTION:DISPLAY")
+        out.append("DESCRIPTION:ACD call in 2 hours")
+        out.append("END:VALARM")
         out.append("END:VEVENT")
 
     out.append("END:VCALENDAR")
