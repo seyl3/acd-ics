@@ -135,12 +135,8 @@ def build_ics(issues):
         desc_parts = []
         if agenda:
             desc_parts.append(f"Agenda:\n{agenda}")
-        if zoom:
-            desc_parts.append(f"Zoom: {zoom}")
         if yt:
             desc_parts.append(f"YouTube: {yt}")
-        if url:
-            desc_parts.append(url)
 
         out.append("BEGIN:VEVENT")
         out.append(f"UID:acd-{issue['number']}@ethereum-pm")
