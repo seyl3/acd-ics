@@ -10,18 +10,29 @@ GITHUB_API = "https://api.github.com/repos/ethereum/pm/issues"
 DURATIONS = {"acde": 90, "acdc": 90, "acdt": 60}
 
 
-def fetch_issues():
+def gh_request(url):
     headers = {"Accept": "application/vnd.github.v3+json"}
     token = os.environ.get("GITHUB_TOKEN")
     if token:
         headers["Authorization"] = f"token {token}"
-
-    req = Request(
-        f"{GITHUB_API}?labels=ACD&state=all&per_page=100&sort=created&direction=desc",
-        headers=headers,
-    )
-    with urlopen(req) as r:
+    with urlopen(Request(url, headers=headers)) as r:
         return json.loads(r.read())
+
+
+def fetch_issues():
+    return gh_request(
+        f"{GITHUB_API}?labels=ACD&state=all&per_page=100&sort=created&direction=desc"
+    )
+
+
+def fetch_bot_comment(issue_number):
+    comments = gh_request(
+        f"{GITHUB_API}/{issue_number}/comments?per_page=5"
+    )
+    for c in comments:
+        if "Protocol Call Resources" in (c.get("body") or ""):
+            return c["body"]
+    return ""
 
 
 def section(body, heading):
@@ -62,15 +73,14 @@ def series(title):
     return "acd"
 
 
-def grab_links(body):
-    out = []
-    z = re.search(r"https://[a-z]*\.?zoom\.us/[^\s)>\]]+", body)
-    if z:
-        out.append(f"Zoom: {z.group()}")
-    y = re.search(r"https://(?:www\.)?(?:youtube\.com|youtu\.be)/[^\s)>\]]+", body)
-    if y:
-        out.append(f"YouTube: {y.group()}")
-    return "\n".join(out)
+def grab_links(text):
+    zoom = re.search(r"https://[a-z]*\.?zoom\.us/[^\s)>\]]+", text)
+    yt = re.search(r"https://(?:www\.)?(?:youtube\.com|youtu\.be)/[^\s)>\]]+", text)
+    return zoom.group() if zoom else None, yt.group() if yt else None
+
+
+def clean_title(title):
+    return re.sub(r",?\s+(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s*\d{4}$", "", title)
 
 
 def esc(text):
@@ -112,17 +122,34 @@ def build_ics(issues):
         s = series(title)
         dur = DURATIONS.get(s, 90)
         agenda = section(body, "Agenda")
-        links = grab_links(body)
         url = issue.get("html_url", "")
 
-        desc = "\n\n".join(p for p in [agenda, links, url] if p)
+        zoom, yt = grab_links(body)
+        if issue.get("state") == "open" or not zoom:
+            bot = fetch_bot_comment(issue["number"])
+            if bot:
+                bz, by = grab_links(bot)
+                zoom = bz or zoom
+                yt = by or yt
+
+        desc_parts = []
+        if agenda:
+            desc_parts.append(f"Agenda:\n{agenda}")
+        if zoom:
+            desc_parts.append(f"Zoom: {zoom}")
+        if yt:
+            desc_parts.append(f"YouTube: {yt}")
+        if url:
+            desc_parts.append(url)
 
         out.append("BEGIN:VEVENT")
         out.append(f"UID:acd-{issue['number']}@ethereum-pm")
-        out.append(fold(f"SUMMARY:{esc(title)}"))
+        out.append(fold(f"SUMMARY:{esc(clean_title(title))}"))
         out.append(f"DTSTART:{dt.strftime('%Y%m%dT%H%M%SZ')}")
         out.append(f"DTEND:{(dt + timedelta(minutes=dur)).strftime('%Y%m%dT%H%M%SZ')}")
-        out.append(fold(f"DESCRIPTION:{esc(desc)}"))
+        out.append(fold(f"DESCRIPTION:{esc(chr(10).join(desc_parts))}"))
+        if zoom:
+            out.append(fold(f"LOCATION:{esc(zoom)}"))
         if url:
             out.append(fold(f"URL:{url}"))
         out.append("END:VEVENT")
