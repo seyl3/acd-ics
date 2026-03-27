@@ -1,5 +1,6 @@
 {
     "rewrites": [
-        {"source": "/feed.ics", "destination": "/api/feed"}
+        {"source": "/feed.ics", "destination": "/api/feed"},
+        {"source": "/", "destination": "/api/index"}
     ]
 }
