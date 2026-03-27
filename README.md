@@ -10,7 +10,13 @@ Subscribe to this URL in your calendar app (Apple Calendar, Google Calendar, etc
 https://acd-ics.vercel.app/feed.ics
 ```
 
-That's it. It includes ACDE, ACDC and ACDT calls with their agenda and meeting links.
+You can also filter by series:
+
+```
+https://acd-ics.vercel.app/feed.ics?series=acde
+https://acd-ics.vercel.app/feed.ics?series=acdc
+https://acd-ics.vercel.app/feed.ics?series=acdt
+```
 
 ## How it works
 
