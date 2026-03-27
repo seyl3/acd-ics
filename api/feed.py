@@ -3,6 +3,7 @@ import os
 import re
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler
+from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
 
@@ -101,14 +102,15 @@ def fold(line):
     return "\r\n ".join(parts)
 
 
-def build_ics(issues):
+def build_ics(issues, filter_series=None):
+    name = f"Ethereum ACD ({filter_series.upper()})" if filter_series else "Ethereum All Core Devs"
     out = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
         "PRODID:-//acd-ics//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
-        "X-WR-CALNAME:Ethereum All Core Devs",
+        f"X-WR-CALNAME:{name}",
     ]
 
     for issue in issues:
@@ -120,6 +122,8 @@ def build_ics(issues):
             continue
 
         s = series(title)
+        if filter_series and s != filter_series:
+            continue
         dur = DURATIONS.get(s, 90)
         agenda = section(body, "Agenda")
         url = issue.get("html_url", "")
@@ -162,7 +166,11 @@ def build_ics(issues):
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            ics = build_ics(fetch_issues())
+            qs = parse_qs(urlparse(self.path).query)
+            filter_series = qs.get("series", [None])[0]
+            if filter_series:
+                filter_series = filter_series.lower()
+            ics = build_ics(fetch_issues(), filter_series)
             self.send_response(200)
             self.send_header("Content-Type", "text/calendar; charset=utf-8")
             self.send_header("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=600")
