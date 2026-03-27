@@ -8,6 +8,7 @@ from urllib.request import Request, urlopen
 
 
 GITHUB_API = "https://api.github.com/repos/ethereum/pm/issues"
+README_URL = "https://raw.githubusercontent.com/ethereum/pm/master/README.md"
 DURATIONS = {"acde": 90, "acdc": 90, "acdt": 60}
 
 
@@ -74,6 +75,48 @@ def series(title):
     return "acd"
 
 
+def call_number(title):
+    m = re.search(r"#(\d+)", title)
+    return int(m.group(1)) if m else None
+
+
+def extract_link(cell):
+    m = re.search(r"\((https?://[^)]+)\)", cell)
+    return m.group(1) if m else None
+
+
+def fetch_readme_table():
+    with urlopen(README_URL) as r:
+        text = r.read().decode("utf-8")
+    lookup = {}
+    for line in text.split("\n"):
+        if not line.startswith("|") or "---" in line or "Date" in line:
+            continue
+        cols = [c.strip() for c in line.split("|")[1:-1]]
+        if len(cols) < 8:
+            continue
+        call_type = cols[1].strip().lower()
+        num = cols[2].strip()
+        if not num.isdigit():
+            continue
+        entry = {}
+        summary = extract_link(cols[4])
+        if summary:
+            entry["summary"] = summary
+        discussion = extract_link(cols[5])
+        if discussion:
+            entry["discussion"] = discussion
+        recording = extract_link(cols[6])
+        if recording:
+            entry["recording"] = recording
+        logs = extract_link(cols[7])
+        if logs:
+            entry["transcript"] = logs
+        if entry:
+            lookup[(call_type, int(num))] = entry
+    return lookup
+
+
 def grab_links(text):
     zoom = re.search(r"https://[a-z]*\.?zoom\.us/[^\s)>\]]+", text)
     yt = re.search(r"https://(?:www\.)?(?:youtube\.com|youtu\.be)/[^\s)>\]]+", text)
@@ -113,6 +156,8 @@ def build_ics(issues, filter_series=None):
         f"X-WR-CALNAME:{name}",
     ]
 
+    readme = fetch_readme_table()
+
     for issue in issues:
         body = issue.get("body") or ""
         title = issue["title"]
@@ -136,11 +181,22 @@ def build_ics(issues, filter_series=None):
                 zoom = bz or zoom
                 yt = by or yt
 
+        num = call_number(title)
+        meta = readme.get((s, num), {}) if num else {}
+
         desc_parts = []
         if agenda:
             desc_parts.append(f"Agenda:\n{agenda}")
         if yt:
             desc_parts.append(f"YouTube: {yt}")
+        if meta.get("summary"):
+            desc_parts.append(f"Summary: {meta['summary']}")
+        if meta.get("recording") and not yt:
+            desc_parts.append(f"Recording: {meta['recording']}")
+        if meta.get("discussion"):
+            desc_parts.append(f"Discussion: {meta['discussion']}")
+        if meta.get("transcript"):
+            desc_parts.append(f"Transcript: {meta['transcript']}")
 
         out.append("BEGIN:VEVENT")
         out.append(f"UID:acd-{issue['number']}@ethereum-pm")
